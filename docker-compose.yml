@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  soundcloud-bot:
+    image: ghcr.io/effree/soundcloud-discord-bot:latest
+    container_name: soundcloud-discord-bot
+    restart: unless-stopped
+    environment:
+      - SOUNDCLOUD_CLIENT_ID=your_client_id_here
+      - SOUNDCLOUD_OAUTH_TOKEN=your_oauth_access_token_here
+      - SOUNDCLOUD_USER_ID=your_soundcloud_user_id_here
+      - DISCORD_WEBHOOK_WIPS=https://discord.com/api/webhooks/...
+      - DISCORD_WEBHOOK_PUBLISHED=https://discord.com/api/webhooks/...
+      - CHECK_INTERVAL_MINUTES=10
+    volumes:
+      - bot_data:/app/data
+
+volumes:
+  bot_data:
