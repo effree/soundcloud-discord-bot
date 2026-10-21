@@ -79,13 +79,14 @@ def check_soundcloud():
     state = load_state()
     posted_tracks = state.get("posted_tracks", [])
 
+    # Use Bearer scheme for official OAuth 2.1 tokens
     headers = {
-        "Authorization": f"OAuth {access_token}",
+        "Authorization": f"Bearer {access_token}",
         "Accept": "application/json; charset=utf-8"
     }
     
-    # Fetch user tracks via SoundCloud API v2
-    url = f"https://api.soundcloud.com/users/{USER_ID}/tracks?client_id={CLIENT_ID}&limit=5"
+    # Fetch user tracks via SoundCloud API v2 (removed redundant client_id from query)
+    url = f"https://api.soundcloud.com/users/{USER_ID}/tracks?limit=5"
     response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
