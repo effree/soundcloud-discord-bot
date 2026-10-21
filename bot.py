@@ -79,13 +79,11 @@ def check_soundcloud():
     state = load_state()
     posted_tracks = state.get("posted_tracks", [])
 
-    # Use Bearer scheme for official OAuth 2.1 tokens
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Accept": "application/json; charset=utf-8"
     }
     
-    # Fetch user tracks via SoundCloud API v2 (removed redundant client_id from query)
     url = f"https://api.soundcloud.com/users/{USER_ID}/tracks?limit=5"
     response = requests.get(url, headers=headers)
 
@@ -94,7 +92,12 @@ def check_soundcloud():
         return
 
     data = response.json()
-    tracks = data.get("collection", [])
+    
+    # Handle if the API response is a direct list or a dictionary with a collection
+    if isinstance(data, list):
+        tracks = data
+    else:
+        tracks = data.get("collection", [])
 
     # Process oldest to newest
     for track in reversed(tracks):
