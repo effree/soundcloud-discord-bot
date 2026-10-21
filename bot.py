@@ -3,15 +3,58 @@ import json
 import time
 import requests
 
-# Load Environment Variables
 CLIENT_ID = os.getenv("SOUNDCLOUD_CLIENT_ID")
-OAUTH_TOKEN = os.getenv("SOUNDCLOUD_OAUTH_TOKEN")
+CLIENT_SECRET = os.getenv("SOUNDCLOUD_CLIENT_SECRET")
+INITIAL_REFRESH_TOKEN = os.getenv("SOUNDCLOUD_REFRESH_TOKEN")
 USER_ID = os.getenv("SOUNDCLOUD_USER_ID")
 WEBHOOK_WIPS = os.getenv("DISCORD_WEBHOOK_WIPS")
 WEBHOOK_PUBLISHED = os.getenv("DISCORD_WEBHOOK_PUBLISHED")
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_MINUTES", 10)) * 60
 
-STATE_FILE = "/app/data/posted_tracks.json"
+STATE_FILE = "/app/data/state.json"
+
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_state(state_data):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        json.dump(state_data, f)
+
+def get_fresh_access_token():
+    state = load_state()
+    refresh_token = state.get("refresh_token") or INITIAL_REFRESH_TOKEN
+
+    token_url = "https://secure.soundcloud.com/oauth/token"
+    payload = {
+        "grant_type": "refresh_token",
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "refresh_token": refresh_token
+    }
+    headers = {"Accept": "application/json"}
+
+    response = requests.post(token_url, data=payload, headers=headers)
+    if response.status_code != 200:
+        print(f"Failed to refresh access token: {response.status_code} - {response.text}")
+        return None
+
+    token_data = response.json()
+    new_access_token = token_data.get("access_token")
+    new_refresh_token = token_data.get("refresh_token")
+
+    # Save the new single-use refresh token for the next cycle
+    if new_refresh_token:
+        state["refresh_token"] = new_refresh_token
+        save_state(state)
+
+    return new_access_token
 
 def load_posted_tracks():
     if os.path.exists(STATE_FILE):

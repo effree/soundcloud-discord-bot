@@ -6,9 +6,10 @@ services:
     container_name: soundcloud-discord-bot
     restart: unless-stopped
     environment:
-      - SOUNDCLOUD_CLIENT_ID=your_client_id_here
-      - SOUNDCLOUD_OAUTH_TOKEN=your_oauth_access_token_here
-      - SOUNDCLOUD_USER_ID=your_soundcloud_user_id_here
+      - SOUNDCLOUD_CLIENT_ID=your_official_client_id
+      - SOUNDCLOUD_CLIENT_SECRET=your_official_client_secret
+      - SOUNDCLOUD_REFRESH_TOKEN=your_initial_refresh_token
+      - SOUNDCLOUD_USER_ID=your_user_id
       - DISCORD_WEBHOOK_WIPS=https://discord.com/api/webhooks/...
       - DISCORD_WEBHOOK_PUBLISHED=https://discord.com/api/webhooks/...
       - CHECK_INTERVAL_MINUTES=10
