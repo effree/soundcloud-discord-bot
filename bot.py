@@ -31,6 +31,10 @@ def get_fresh_access_token():
     state = load_state()
     refresh_token = state.get("refresh_token") or INITIAL_REFRESH_TOKEN
 
+    if not refresh_token:
+        print("Error: No refresh token available!")
+        return None
+
     token_url = "https://secure.soundcloud.com/oauth/token"
     payload = {
         "grant_type": "refresh_token",
@@ -56,20 +60,6 @@ def get_fresh_access_token():
 
     return new_access_token
 
-def load_posted_tracks():
-    if os.path.exists(STATE_FILE):
-        try:
-            with open(STATE_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            return []
-    return []
-
-def save_posted_tracks(tracks):
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
-        json.dump(tracks, f)
-
 def send_to_discord(webhook_url, message):
     if not webhook_url:
         print("Webhook URL not set, skipping message.")
@@ -81,10 +71,16 @@ def send_to_discord(webhook_url, message):
 
 def check_soundcloud():
     print("Checking SoundCloud for new tracks...")
-    posted_tracks = load_posted_tracks()
+    
+    access_token = get_fresh_access_token()
+    if not access_token:
+        return
+
+    state = load_state()
+    posted_tracks = state.get("posted_tracks", [])
 
     headers = {
-        "Authorization": f"OAuth {OAUTH_TOKEN}",
+        "Authorization": f"OAuth {access_token}",
         "Accept": "application/json; charset=utf-8"
     }
     
@@ -112,7 +108,6 @@ def check_soundcloud():
 
         if sharing == "private":
             secret_token = track.get("secret_token")
-            # Construct the unique private shareable link format
             if secret_token:
                 track_url = f"{permalink_url}/s-{secret_token}"
             else:
@@ -128,11 +123,11 @@ def check_soundcloud():
             send_to_discord(WEBHOOK_PUBLISHED, message)
 
         posted_tracks.append(track_id)
-        # Keep track list trimmed to last 100 entries
         if len(posted_tracks) > 100:
             posted_tracks.pop(0)
             
-        save_posted_tracks(posted_tracks)
+        state["posted_tracks"] = posted_tracks
+        save_state(state)
 
 def main():
     print("SoundCloud-to-Discord Bot started.")
